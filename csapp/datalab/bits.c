@@ -258,7 +258,7 @@ int conditional(int x, int y, int z) {
  *   Max ops: 24
  *   Rating: 3
  */
-int isLessOrEqual(int x, int y) {
+int isLessOrEqual(int x, int y) { 
   return 2;
 }
 //4
@@ -271,6 +271,22 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
+    // 1. consider zero
+    // 0:  00000000 00000000 00000000 00000000
+    // -0: 00000000 00000000 00000000 00000000
+    // (0 & -0) >> 31: 00000000 00000000 00000000 00000000 (0)
+    //
+    // 2. consider non-zero x
+    // x:  0xxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
+    // -x: 1xxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
+    // (x | -x) >> 31: 11111111 11111111 11111111 11111111 (-1)
+    int neg_x = ~x + 1;
+    int sign = (x | neg_x) >> 31;
+
+    // for zero, return 1 (0 + 1)
+    // for non-zero, return 0 (-1 + 1)
+    return sign + 1;
+
   return 2;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
