@@ -239,7 +239,13 @@ int negate(int x) {
  *   Rating: 3
  */
 int isAsciiDigit(int x) {
-  return 2;
+    // (0x30 <= x <= 0x39) => (x - 0x30) >= 0 && (0x39 - x) >= 0
+    //
+    // That is , the sign bit of (x + ~0x30 + 1) is 0, and the sign bit of (0x39 + ~x + 1) is 0.
+    int sign_1 = (x + ~0x30 + 1) >> 31;
+    int sign_2 = (0x39 + ~x + 1) >> 31;
+
+    return !sign_1 & !sign_2;
 }
 /* 
  * conditional - same as x ? y : z 
@@ -249,7 +255,14 @@ int isAsciiDigit(int x) {
  *   Rating: 3
  */
 int conditional(int x, int y, int z) {
-  return 2;
+    // we need all bits 1 mask and all bits 0 mask to return x or z regarding condition x.
+    //
+    // when x is 0, mask = 0 (00000000 00000000 00000000 00000000)
+    // when x is not 0, mask = -1 (11111111 11111111 11111111 11111111)
+    int condition = !!x;
+    int mask = ~condition + 1;
+
+    return (mask & y) | (~mask & z);
 }
 /* 
  * isLessOrEqual - if x <= y  then return 1, else return 0 
@@ -259,7 +272,25 @@ int conditional(int x, int y, int z) {
  *   Rating: 3
  */
 int isLessOrEqual(int x, int y) { 
-  return 2;
+    // 1. if the sign bits of x and y are equal, what we need to do is to check if x <= y.
+    //
+    // if x <= y, then y - x >= 0
+    //
+    // 0xxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx  diff = x - y = y + (~x) + 1
+    // 00000000 00000000 00000000 00000000  diff >> 31
+    // 00000000 00000000 00000000 00000001  !(diff >> 31)
+    //
+    // 2. if the sign bits of x and y are not equal, x <= y means x < 0, y >= 0.
+    // 
+    // if y >= 0, the sign bit of y is 0, which means !(y >> 31) == 1.
+    //
+    // 0xxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx  y
+    // 00000000 00000000 00000000 00000000  y >> 31
+    // 00000000 00000000 00000000 00000001  !(y >> 31)
+    int diff = y + (~x) + 1;
+    int sign_xor = (x >> 31) ^ (y >> 31);
+
+    return (!sign_xor & !(diff >> 31)) | (sign_xor & !(y >> 31));
 }
 //4
 /* 
@@ -271,23 +302,21 @@ int isLessOrEqual(int x, int y) {
  *   Rating: 4 
  */
 int logicalNeg(int x) {
-    // 1. consider zero
+    // if x is zero:
     // 0:  00000000 00000000 00000000 00000000
     // -0: 00000000 00000000 00000000 00000000
     // (0 & -0) >> 31: 00000000 00000000 00000000 00000000 (0)
     //
-    // 2. consider non-zero x
+    // if x is non-zero:
     // x:  0xxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
     // -x: 1xxxxxxx xxxxxxxx xxxxxxxx xxxxxxxx
     // (x | -x) >> 31: 11111111 11111111 11111111 11111111 (-1)
     int neg_x = ~x + 1;
     int sign = (x | neg_x) >> 31;
 
-    // for zero, return 1 (0 + 1)
-    // for non-zero, return 0 (-1 + 1)
+    // if x is zero, return 1 (0 + 1)
+    // if x is non-zero, return 0 (-1 + 1)
     return sign + 1;
-
-  return 2;
 }
 /* howManyBits - return the minimum number of bits required to represent x in
  *             two's complement
